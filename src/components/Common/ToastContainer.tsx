@@ -1,5 +1,5 @@
 import React from 'react';
-import { useUIStore } from '../store/uiStore';
+import { useUIStore } from '../../store';
 
 const ToastContainer: React.FC = () => {
   const { toasts, removeToast } = useUIStore();
