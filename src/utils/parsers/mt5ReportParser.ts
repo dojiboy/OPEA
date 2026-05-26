@@ -235,3 +235,14 @@ const parseNumericValue = (value: string | number): number => {
   const cleaned = value.toString().replace(/[^0-9.-]/g, '');
   return parseFloat(cleaned) || 0;
 };
+
+export function categorizeFile(filename: string): 'report' | 'graph' | 'trade' {
+  const lower = filename.toLowerCase();
+  if (lower.includes('graph') || lower.includes('equity') || lower.includes('balance')) {
+    return 'graph';
+  }
+  if (lower.includes('trade') || lower.includes('deal') || lower.includes('order')) {
+    return 'trade';
+  }
+  return 'report';
+}
