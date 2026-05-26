@@ -1,0 +1,31 @@
+{
+  "name": "ea-backtest-analyzer",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^5.0.13",
+    "uuid": "^14.0.0",
+    "papaparse": "^5.5.3",
+    "xlsx": "^0.18.5",
+    "lightweight-charts": "^5.2.0",
+    "file-saver": "^2.0.5"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.15",
+    "@types/react-dom": "^19.2.3",
+    "@types/papaparse": "^5.5.2",
+    "@types/file-saver": "^2.0.7",
+    "@types/uuid": "^9.0.7",
+    "@vitejs/plugin-react": "^6.0.2",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.8"
+  }
+}
