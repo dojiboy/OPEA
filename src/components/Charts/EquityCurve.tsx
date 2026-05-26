@@ -1,10 +1,5 @@
 import React, { useRef, useEffect } from 'react';
 import { createChart, IChartApi, ISeriesApi, Time } from 'lightweight-charts';
-import { Box, Paper, Typography, ButtonGroup, Button } from '@mui/material';
-import DownloadIcon from '@mui/icons-material/Download';
-import ZoomInIcon from '@mui/icons-material/ZoomIn';
-import ZoomOutIcon from '@mui/icons-material/ZoomOut';
-import ResetTvIcon from '@mui/icons-material/Refresh';
 
 interface ChartDataPoint {
   time: number;
@@ -27,7 +22,7 @@ const EquityCurve: React.FC<EquityCurveProps> = ({
   const chartRef = useRef<IChartApi | null>(null);
   const balanceSeriesRef = useRef<ISeriesApi<'Line'>>();
   const equitySeriesRef = useRef<ISeriesApi<'Line'>>();
-
+  
   useEffect(() => {
     if (!chartContainerRef.current || data.length === 0) return;
 
@@ -43,7 +38,7 @@ const EquityCurve: React.FC<EquityCurveProps> = ({
         horzLines: { color: 'rgba(42, 46, 57, 0.5)' },
       },
       crosshair: {
-        mode: 1, // CrosshairMode.Normal
+        mode: 1,
       },
       rightPriceScale: {
         borderColor: 'rgba(197, 203, 206, 0.8)',
@@ -57,7 +52,6 @@ const EquityCurve: React.FC<EquityCurveProps> = ({
 
     chartRef.current = chart;
 
-    // Balance Series
     const balanceSeries = chart.addLineSeries({
       color: '#2563eb',
       lineWidth: 2,
@@ -65,7 +59,6 @@ const EquityCurve: React.FC<EquityCurveProps> = ({
     });
     balanceSeriesRef.current = balanceSeries;
 
-    // Equity Series
     const equitySeries = chart.addLineSeries({
       color: '#10b981',
       lineWidth: 2,
@@ -73,7 +66,6 @@ const EquityCurve: React.FC<EquityCurveProps> = ({
     });
     equitySeriesRef.current = equitySeries;
 
-    // Transform data for lightweight-charts
     const balanceData = data.map(d => ({
       time: (d.time / 1000) as Time,
       value: d.balance,
@@ -87,7 +79,6 @@ const EquityCurve: React.FC<EquityCurveProps> = ({
     balanceSeries.setData(balanceData);
     equitySeries.setData(equityData);
 
-    // Handle resize
     const handleResize = () => {
       if (chartContainerRef.current && chartRef.current) {
         chartRef.current.applyOptions({
@@ -106,7 +97,6 @@ const EquityCurve: React.FC<EquityCurveProps> = ({
 
   const handleExport = () => {
     if (!chartRef.current) return;
-    // Lightweight charts doesn't have built-in export, would need html2canvas
     alert('Export feature coming soon!');
   };
 
@@ -143,46 +133,35 @@ const EquityCurve: React.FC<EquityCurveProps> = ({
   };
 
   return (
-    <Paper sx={{ p: 2, height: '100%' }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h6" fontWeight={600}>
-          {title}
-        </Typography>
-        <ButtonGroup size="small">
-          <Button onClick={handleZoomIn} title="Zoom In">
-            <ZoomInIcon />
-          </Button>
-          <Button onClick={handleZoomOut} title="Zoom Out">
-            <ZoomOutIcon />
-          </Button>
-          <Button onClick={handleReset} title="Reset View">
-            <ResetTvIcon />
-          </Button>
-          <Button onClick={handleExport} title="Export Chart">
-            <DownloadIcon />
-          </Button>
-        </ButtonGroup>
-      </Box>
-      <Box 
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 h-full">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{title}</h3>
+        <div className="flex gap-1">
+          <button onClick={handleZoomIn} title="Zoom In" className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg>
+          </button>
+          <button onClick={handleZoomOut} title="Zoom Out" className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m0 0v3m0-6H7m3 0H7" /></svg>
+          </button>
+          <button onClick={handleReset} title="Reset View" className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+          </button>
+          <button onClick={handleExport} title="Export Chart" className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+          </button>
+        </div>
+      </div>
+      <div 
         ref={chartContainerRef} 
-        sx={{ 
-          width: '100%', 
-          height: height - 60,
-          '& .legend-container': { position: 'absolute', left: 12, top: 12, zIndex: 1 }
-        }} 
+        style={{ width: '100%', height: height - 60 }}
+        className="relative"
       />
       {data.length === 0 && (
-        <Box 
-          display="flex" 
-          justifyContent="center" 
-          alignItems="center" 
-          height={height - 60}
-          sx={{ color: 'text.secondary' }}
-        >
-          <Typography>No chart data available. Upload a report file to see the equity curve.</Typography>
-        </Box>
+        <div className="flex justify-center items-center text-gray-500 dark:text-gray-400" style={{ height: height - 60 }}>
+          <p>No chart data available. Upload a report file to see the equity curve.</p>
+        </div>
       )}
-    </Paper>
+    </div>
   );
 };
 

@@ -1,153 +1,101 @@
-import React, { useState, useMemo } from 'react';
-import { 
-  DataGrid, GridColDef, GridSortModel, GridFilterModel, GridToolbar 
-} from '@mui/x-data-grid';
-import { Box, Paper, Typography, TextField, InputAdornment } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import { Trade } from '../../types/trade';
+import React, { useState } from 'react';
+
+interface Trade {
+  ticket: number;
+  time: number;
+  type: string;
+  volume: number;
+  openPrice: number;
+  closePrice: number;
+  profit: number;
+  comment?: string;
+  strategyId?: string;
+}
 
 interface TradeTableProps {
   trades: Trade[];
-  onRowClick?: (trade: Trade) => void;
-  height?: number;
 }
 
-const TradeTable: React.FC<TradeTableProps> = ({ 
-  trades, 
-  onRowClick,
-  height = 500 
-}) => {
-  const [searchText, setSearchText] = useState('');
-  const [sortModel, setSortModel] = useState<GridSortModel>([
-    { field: 'time', sort: 'desc' }
-  ]);
+const TradeTable: React.FC<TradeTableProps> = ({ trades }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortField, setSortField] = useState<keyof Trade>('time');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 25;
 
-  const columns: GridColDef[] = [
-    { 
-      field: 'time', 
-      headerName: 'Time', 
-      width: 160,
-      valueFormatter: (params) => {
-        if (!params.value) return '';
-        return new Date(params.value).toLocaleString();
-      }
-    },
-    { field: 'ticket', headerName: 'Ticket', width: 80 },
-    { 
-      field: 'type', 
-      headerName: 'Type', 
-      width: 80,
-      cellClassName: (params) => {
-        if (params.value === 'BUY') return 'trade-buy';
-        if (params.value === 'SELL') return 'trade-sell';
-        return '';
-      }
-    },
-    { field: 'volume', headerName: 'Volume', width: 80, align: 'right', headerAlign: 'right' },
-    { field: 'openPrice', headerName: 'Open Price', width: 100, align: 'right', headerAlign: 'right' },
-    { field: 'closePrice', headerName: 'Close Price', width: 100, align: 'right', headerAlign: 'right' },
-    { 
-      field: 'profit', 
-      headerName: 'Profit', 
-      width: 100, 
-      align: 'right', 
-      headerAlign: 'right',
-      cellClassName: (params) => {
-        if (params.value > 0) return 'profit-positive';
-        if (params.value < 0) return 'profit-negative';
-        return '';
-      }
-    },
-    { field: 'swap', headerName: 'Swap', width: 80, align: 'right', headerAlign: 'right' },
-    { field: 'commission', headerName: 'Commission', width: 100, align: 'right', headerAlign: 'right' },
-    { field: 'comment', headerName: 'Comment', width: 150 },
-    { field: 'strategyId', headerName: 'Strategy', width: 100 },
-    { 
-      field: 'duration', 
-      headerName: 'Duration', 
-      width: 100,
-      valueFormatter: (params) => {
-        if (!params.value) return '';
-        const minutes = Math.floor(params.value / 60000);
-        const hours = Math.floor(minutes / 60);
-        const mins = minutes % 60;
-        if (hours > 0) return `${hours}h ${mins}m`;
-        return `${mins}m`;
-      }
-    },
-  ];
+  const filteredTrades = trades.filter(trade =>
+    trade.comment?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    trade.ticket.toString().includes(searchTerm) ||
+    trade.strategyId?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  const filteredTrades = useMemo(() => {
-    if (!searchText.trim()) return trades;
-    
-    const search = searchText.toLowerCase();
-    return trades.filter(trade => 
-      trade.ticket?.toLowerCase().includes(search) ||
-      trade.comment?.toLowerCase().includes(search) ||
-      trade.type?.toLowerCase().includes(search) ||
-      trade.strategyId?.toLowerCase().includes(search)
-    );
-  }, [trades, searchText]);
+  const sortedTrades = [...filteredTrades].sort((a, b) => {
+    const aVal = a[sortField];
+    const bVal = b[sortField];
+    if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
+    if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
+    return 0;
+  });
 
-  const rows = useMemo(() => {
-    return filteredTrades.map((trade, index) => ({
-      id: trade.ticket || index,
-      ...trade,
-    }));
-  }, [filteredTrades]);
+  const totalPages = Math.ceil(sortedTrades.length / rowsPerPage);
+  const paginatedTrades = sortedTrades.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+
+  const handleSort = (field: keyof Trade) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('desc');
+    }
+  };
 
   return (
-    <Paper sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h6" fontWeight={600}>
-          Trades ({filteredTrades.length})
-        </Typography>
-        <TextField
-          size="small"
-          placeholder="Search by ticket, comment, type..."
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          sx={{ width: 300 }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Trade History</h3>
+        <input
+          type="text"
+          placeholder="Search..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
-      </Box>
-      <Box sx={{ flexGrow: 1, '& .profit-positive': { color: '#10b981', fontWeight: 600 }, '& .profit-negative': { color: '#ef4444', fontWeight: 600 }, '& .trade-buy': { color: '#2563eb', fontWeight: 600 }, '& .trade-sell': { color: '#f59e0b', fontWeight: 600 } }}>
-        <DataGrid
-          rows={rows}
-          columns={columns}
-          initialState={{
-            pagination: {
-              paginationModel: { pageSize: 25 },
-            },
-          }}
-          pageSizeOptions={[10, 25, 50, 100]}
-          checkboxSelection
-          disableRowSelectionOnClick
-          onRowClick={onRowClick ? (params) => onRowClick(params.row as Trade) : undefined}
-          sortModel={sortModel}
-          onSortModelChange={setSortModel}
-          slots={{ toolbar: GridToolbar }}
-          slotProps={{
-            toolbar: {
-              showQuickFilter: false,
-              print: false,
-            },
-          }}
-          autoHeight={false}
-          sx={{ 
-            border: 'none',
-            '& .MuiDataGrid-main': { maxHeight: height - 120 },
-            '& .MuiDataGrid-footerContainer': { borderTop: '1px solid rgba(224, 224, 224, 1)' }
-          }}
-        />
-      </Box>
-    </Paper>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead className="bg-gray-50 dark:bg-gray-700">
+            <tr>
+              {['Ticket', 'Time', 'Type', 'Volume', 'Open', 'Close', 'Profit', 'Comment'].map((header) => (
+                <th key={header} className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600" onClick={() => handleSort(header.toLowerCase() as keyof Trade)}>
+                  {header} {sortField === header.toLowerCase() && (sortOrder === 'asc' ? '↑' : '↓')}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+            {paginatedTrades.map((trade) => (
+              <tr key={trade.ticket} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">{trade.ticket}</td>
+                <td className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">{new Date(trade.time).toLocaleString()}</td>
+                <td className={`px-4 py-2 text-sm font-medium ${trade.type === 'BUY' ? 'text-green-600' : 'text-red-600'}`}>{trade.type}</td>
+                <td className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">{trade.volume}</td>
+                <td className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">{trade.openPrice.toFixed(5)}</td>
+                <td className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">{trade.closePrice.toFixed(5)}</td>
+                <td className={`px-4 py-2 text-sm font-medium ${trade.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>${trade.profit.toFixed(2)}</td>
+                <td className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">{trade.comment || '-'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center mt-4 gap-2">
+          <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded disabled:opacity-50">Prev</button>
+          <span className="text-gray-700 dark:text-gray-300">Page {currentPage} of {totalPages}</span>
+          <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded disabled:opacity-50">Next</button>
+        </div>
+      )}
+    </div>
   );
 };
 
