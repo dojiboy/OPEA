@@ -1,7 +1,4 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
 import { useSettingsStore } from './store/settingsStore';
 import Header from './components/Layout/Header';
 import Sidebar from './components/Layout/Sidebar';
@@ -18,45 +15,25 @@ import { useReportStore } from './store/reportStore';
 const App: React.FC = () => {
   const { darkMode } = useSettingsStore();
   const { reports } = useReportStore();
+  const [currentView, setCurrentView] = React.useState<string>('upload');
 
-  const theme = createTheme({
+  const theme = {
     palette: {
       mode: darkMode ? 'dark' : 'light',
-      primary: {
-        main: '#2563eb',
+      primary: { main: '#2563eb' },
+      success: { main: '#10b981' },
+      error: { main: '#ef4444' },
+      warning: { main: '#f59e0b' },
+      background: {
+        default: darkMode ? '#111827' : '#f3f4f6',
+        paper: darkMode ? '#1f2937' : '#ffffff',
       },
-      success: {
-        main: '#10b981',
-      },
-      error: {
-        main: '#ef4444',
-      },
-      warning: {
-        main: '#f59e0b',
-      },
-    },
-    typography: {
-      fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-    },
-    components: {
-      MuiButton: {
-        styleOverrides: {
-          root: {
-            textTransform: 'none',
-            borderRadius: 8,
-          },
-        },
-      },
-      MuiCard: {
-        styleOverrides: {
-          root: {
-            borderRadius: 12,
-            boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-          },
-        },
+      text: {
+        primary: darkMode ? '#f9fafb' : '#111827',
+        secondary: darkMode ? '#9ca3af' : '#6b7280',
       },
     },
-  });
+  };
 
   // Load data from localStorage on mount
   useEffect(() => {
@@ -64,31 +41,35 @@ const App: React.FC = () => {
     useSettingsStore.persist.rehydrate();
   }, []);
 
+  const renderView = () => {
+    switch (currentView) {
+      case 'upload': return <FileUploader />;
+      case 'reports': return <ReportSummary />;
+      case 'equity-curve': return <EquityCurve />;
+      case 'trades': return <TradeTable />;
+      case 'strategy': return <StrategyPerformanceBreakdown />;
+      case 'risk': return <RiskAnalyzer />;
+      case 'optimizer': return <ParameterOptimizer />;
+      default: return <FileUploader />;
+    }
+  };
+
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Router>
-        <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-          <Header />
-          <div style={{ display: 'flex', flex: 1 }}>
-            <Sidebar />
-            <main style={{ flex: 1, padding: '24px', overflow: 'auto' }}>
-              <Routes>
-                <Route path="/" element={<Navigate to="/upload" replace />} />
-                <Route path="/upload" element={<FileUploader />} />
-                <Route path="/reports" element={<ReportSummary />} />
-                <Route path="/equity-curve" element={<EquityCurve />} />
-                <Route path="/trades" element={<TradeTable />} />
-                <Route path="/strategy" element={<StrategyPerformanceBreakdown />} />
-                <Route path="/risk" element={<RiskAnalyzer />} />
-                <Route path="/optimizer" element={<ParameterOptimizer />} />
-              </Routes>
-            </main>
-          </div>
-          <ToastContainer />
-        </div>
-      </Router>
-    </ThemeProvider>
+    <div style={{ 
+      backgroundColor: theme.palette.background.default, 
+      color: theme.palette.text.primary,
+      minHeight: '100vh',
+      fontFamily: 'Inter, Roboto, Helvetica, Arial, sans-serif'
+    }}>
+      <Header currentView={currentView} setCurrentView={setCurrentView} />
+      <div style={{ display: 'flex' }}>
+        <Sidebar currentView={currentView} setCurrentView={setCurrentView} />
+        <main style={{ flex: 1, padding: '24px', overflow: 'auto' }}>
+          {renderView()}
+        </main>
+      </div>
+      <ToastContainer />
+    </div>
   );
 };
 
